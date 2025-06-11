@@ -669,7 +669,7 @@ class PDFToolsApp:
             for text, pos in positions:
                 tk.Radiobutton(position_frame, text=text, variable=position_var, value=pos).pack(side=tk.LEFT, padx=5)
             
-            # Configuración de fuente y color
+            # Configuración de fuente y color primero
             tk.Label(number_window, text="Apariencia del número:").pack(anchor=tk.W, padx=10, pady=(10,0))
             
             appearance_frame = tk.Frame(number_window)
