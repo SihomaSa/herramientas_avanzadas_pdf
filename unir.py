@@ -53,6 +53,8 @@ class PDFToolsApp:
         convert_menu = tk.Menu(menubar, tearoff=0)
         convert_menu.add_command(label="PDF a JPG", command=self.pdf_to_jpg)
         convert_menu.add_command(label="JPG a PDF", command=self.jpg_to_pdf)
+        convert_menu.add_command(label="JPG a PNG", command=self.jpg_to_png)
+        convert_menu.add_command(label="PNG a JPG", command=self.png_to_jpg)
         convert_menu.add_command(label="PDF a Word", command=self.pdf_to_word)
         convert_menu.add_command(label="Word a PDF", command=self.word_to_pdf)
         menubar.add_cascade(label="Conversión", menu=convert_menu)
@@ -127,7 +129,9 @@ class PDFToolsApp:
         
         tk.Button(convert_ops_frame, text="PDF a JPG", command=self.pdf_to_jpg, bg="#E91E63", fg="white").pack(side=tk.LEFT, padx=2)
         tk.Button(convert_ops_frame, text="JPG a PDF", command=self.jpg_to_pdf, bg="#3F51B5", fg="white").pack(side=tk.LEFT, padx=2)
-        tk.Button(convert_ops_frame, text="PDF a Word", command=self.pdf_to_word, bg="#009688", fg="white").pack(side=tk.LEFT, padx=2)
+        tk.Button(convert_ops_frame, text="JPG a PNG", command=self.jpg_to_png, bg="#009688", fg="white").pack(side=tk.LEFT, padx=2)
+        tk.Button(convert_ops_frame, text="PNG a JPG", command=self.png_to_jpg, bg="#FF9800", fg="white").pack(side=tk.LEFT, padx=2)
+        tk.Button(convert_ops_frame, text="PDF a Word", command=self.pdf_to_word, bg="#2907D1", fg="white").pack(side=tk.LEFT, padx=2)
         tk.Button(convert_ops_frame, text="Word a PDF", command=self.word_to_pdf, bg="#FF5722", fg="white").pack(side=tk.LEFT, padx=2)
         
         tab_control.pack(fill=tk.BOTH, expand=True)
@@ -528,7 +532,93 @@ class PDFToolsApp:
             
         except Exception as e:
             messagebox.showerror("Error", f"Error al convertir JPG a PDF:\n{str(e)}")
+    # Convertir JPG a PNG
+    def jpg_to_png(self):
+        if not self.other_files:
+            messagebox.showerror("Error", "Por favor agregue al menos un archivo JPG")
+            return
+        
+        # Filtrar solo archivos JPG
+        jpg_files = [f for f in self.other_files if f.lower().endswith(('.jpg', '.jpeg'))]
+        
+        if not jpg_files:
+            messagebox.showerror("Error", "No se encontraron archivos JPG para convertir")
+            return
+        
+        try:
+            for jpg_path in jpg_files:
+                # Abrir imagen JPG
+                img = Image.open(jpg_path)
+                
+                # Crear nombre de archivo de salida
+                base_name = os.path.splitext(os.path.basename(jpg_path))[0]
+                output_filename = f"{base_name}.png"
+                output_path = os.path.join(self.output_folder, output_filename)
+                
+                # Guardar como PNG
+                img.save(output_path, "PNG")
             
+            messagebox.showinfo("Éxito", f"Conversión completada.\nArchivos PNG guardados en:\n{self.output_folder}")
+            self.other_files.clear()
+            self.convert_listbox.delete(0, tk.END)
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al convertir JPG a PNG:\n{str(e)}")
+    # Convertir PNG a JPG    
+    def png_to_jpg(self):
+        if not self.other_files:
+            messagebox.showerror("Error", "Por favor agregue al menos un archivo PNG")
+            return
+        
+        # Filtrar solo archivos PNG
+        png_files = [f for f in self.other_files if f.lower().endswith('.png')]
+        
+        if not png_files:
+            messagebox.showerror("Error", "No se encontraron archivos PNG para convertir")
+            return
+        
+        # Ventana de configuración para calidad JPG
+        config_window = tk.Toplevel(self.root)
+        config_window.title("Configuración PNG a JPG")
+        config_window.geometry("300x150")
+        
+        tk.Label(config_window, text="Calidad de imagen (1-100):").pack(pady=5)
+        quality_var = tk.IntVar(value=90)
+        tk.Scale(config_window, from_=1, to=100, orient=tk.HORIZONTAL, variable=quality_var).pack()
+        
+        def perform_conversion():
+            quality = quality_var.get()
+            
+            try:
+                for png_path in png_files:
+                    # Abrir imagen PNG
+                    img = Image.open(png_path)
+                    
+                    # Convertir a RGB si tiene transparencia
+                    if img.mode in ('RGBA', 'LA'):
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        background.paste(img, mask=img.split()[-1])
+                        img = background
+                    
+                    # Crear nombre de archivo de salida
+                    base_name = os.path.splitext(os.path.basename(png_path))[0]
+                    output_filename = f"{base_name}.jpg"
+                    output_path = os.path.join(self.output_folder, output_filename)
+                    
+                    # Guardar como JPG
+                    img.save(output_path, "JPEG", quality=quality)
+                
+                messagebox.showinfo("Éxito", f"Conversión completada.\nArchivos JPG guardados en:\n{self.output_folder}")
+                config_window.destroy()
+                self.other_files.clear()
+                self.convert_listbox.delete(0, tk.END)
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al convertir PNG a JPG:\n{str(e)}")
+        
+        tk.Button(config_window, text="Convertir", command=perform_conversion, bg="#4CAF50", fg="white").pack(pady=10)
+        tk.Button(config_window, text="Cancelar", command=config_window.destroy).pack() 
+        
     
     def pdf_to_word(self):
         if not self.other_files:
